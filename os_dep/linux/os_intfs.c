@@ -2143,7 +2143,7 @@ void devobj_deinit(struct dvobj_priv *pdvobj)
 	_rtw_mutex_free(&pdvobj->cam_ctl.sec_cam_access_mutex);
 
 #if defined(RTK_129X_PLATFORM) && defined(CONFIG_PCI_HCI)
-	_rtw_spinlock_free(&pdvobj->io_reg_lock);
+	_rtw_spinunlock(&pdvobj->io_reg_lock);
 #endif
 #ifdef CONFIG_MBSSID_CAM
 	rtw_mbid_cam_deinit(pdvobj);

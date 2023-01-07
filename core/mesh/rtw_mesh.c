@@ -437,6 +437,7 @@ void rtw_chk_candidate_peer_notify(_adapter *adapter, struct wlan_network *scann
 		, scanned->network.MacAddress
 		, BSS_EX_TLV_IES(&scanned->network)
 		, BSS_EX_TLV_IES_LEN(&scanned->network)
+        , scanned->network.Rssi
 		, GFP_ATOMIC
 	);
 #endif
@@ -1924,7 +1925,7 @@ void rtw_mesh_plink_ctl_deinit(_adapter *adapter)
 	}
 	_exit_critical_bh(&(plink_ctl->lock), &irqL);
 
-	_rtw_spinlock_free(&plink_ctl->lock);
+	_rtw_spinunlock(&plink_ctl->lock);
 
 #if CONFIG_RTW_MESH_PEER_BLACKLIST
 	rtw_mesh_peer_blacklist_flush(adapter);
@@ -2128,6 +2129,7 @@ void rtw_mesh_expire_peer_notify(_adapter *adapter, const u8 *peer_addr)
 		, peer_addr
 		, null_ssid
 		, 2
+        , -999
 		, GFP_ATOMIC
 	);
 #endif
@@ -2371,6 +2373,70 @@ static void rtw_mpath_tx_queue_flush(_adapter *adapter)
 
 #ifdef PLATFORM_LINUX /* 3.10 ~ 4.13 checked */
 #if defined(CONFIG_SLUB)
+struct slab {
+    unsigned long __page_flags;
+
+#if defined(CONFIG_SLAB)
+
+    union {
+		struct list_head slab_list;
+		struct rcu_head rcu_head;
+	};
+	struct kmem_cache *slab_cache;
+	void *freelist;	/* array of free object indexes */
+	void *s_mem;	/* first object */
+	unsigned int active;
+
+#elif defined(CONFIG_SLUB)
+
+    union {
+        struct list_head slab_list;
+        struct rcu_head rcu_head;
+#ifdef CONFIG_SLUB_CPU_PARTIAL
+        struct {
+            struct slab *next;
+            int slabs;	/* Nr of slabs left */
+        };
+#endif
+    };
+    struct kmem_cache *slab_cache;
+    /* Double-word boundary */
+    void *freelist;		/* first free object */
+    union {
+        unsigned long counters;
+        struct {
+            unsigned inuse:16;
+            unsigned objects:15;
+            unsigned frozen:1;
+        };
+    };
+    unsigned int __unused;
+
+#elif defined(CONFIG_SLOB)
+
+    struct list_head slab_list;
+	void *__unused_1;
+	void *freelist;		/* first free block */
+	long units;
+	unsigned int __unused_2;
+
+#else
+#error "Unexpected slab allocator configured"
+#endif
+
+    atomic_t __page_refcount;
+#ifdef CONFIG_MEMCG
+    unsigned long memcg_data;
+#endif
+};
+
+#define slab_folio(s)		(_Generic((s),				\
+	const struct slab *:	(const struct folio *)s,		\
+	struct slab *:		(struct folio *)s))
+static inline void *slab_address(const struct slab *slab)
+{
+    return folio_address(slab_folio(slab));
+}
 #include <linux/slub_def.h>
 #elif defined(CONFIG_SLAB)
 #include <linux/slab_def.h>
