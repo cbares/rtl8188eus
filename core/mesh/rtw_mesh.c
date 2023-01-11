@@ -2371,8 +2371,8 @@ static void rtw_mpath_tx_queue_flush(_adapter *adapter)
 	}
 }
 
-#ifdef PLATFORM_LINUX /* 3.10 ~ 4.13 checked */
-#if defined(CONFIG_SLUB)
+#ifdef PLATFORM_LINUX /* 3.10 ~ 4.13, 5.15 ~ 5.19 checked */
+#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0))
 struct slab {
     unsigned long __page_flags;
 
@@ -2437,6 +2437,8 @@ static inline void *slab_address(const struct slab *slab)
 {
     return folio_address(slab_folio(slab));
 }
+#endif // LINUX VERSION
+#if defined(CONFIG_SLUB)
 #include <linux/slub_def.h>
 #elif defined(CONFIG_SLAB)
 #include <linux/slab_def.h>
