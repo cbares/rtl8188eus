@@ -2371,78 +2371,14 @@ static void rtw_mpath_tx_queue_flush(_adapter *adapter)
 	}
 }
 
-#ifdef PLATFORM_LINUX /* 3.10 ~ 4.13, 5.15 ~ 5.19 checked */
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(5, 19, 0))
-struct slab {
-    unsigned long __page_flags;
-
-#if defined(CONFIG_SLAB)
-
-    union {
-		struct list_head slab_list;
-		struct rcu_head rcu_head;
-	};
-	struct kmem_cache *slab_cache;
-	void *freelist;	/* array of free object indexes */
-	void *s_mem;	/* first object */
-	unsigned int active;
-
-#elif defined(CONFIG_SLUB)
-
-    union {
-        struct list_head slab_list;
-        struct rcu_head rcu_head;
-#ifdef CONFIG_SLUB_CPU_PARTIAL
-        struct {
-            struct slab *next;
-            int slabs;	/* Nr of slabs left */
-        };
-#endif
-    };
-    struct kmem_cache *slab_cache;
-    /* Double-word boundary */
-    void *freelist;		/* first free object */
-    union {
-        unsigned long counters;
-        struct {
-            unsigned inuse:16;
-            unsigned objects:15;
-            unsigned frozen:1;
-        };
-    };
-    unsigned int __unused;
-
-#elif defined(CONFIG_SLOB)
-
-    struct list_head slab_list;
-	void *__unused_1;
-	void *freelist;		/* first free block */
-	long units;
-	unsigned int __unused_2;
-
-#else
-#error "Unexpected slab allocator configured"
-#endif
-
-    atomic_t __page_refcount;
-#ifdef CONFIG_MEMCG
-    unsigned long memcg_data;
-#endif
-};
-
-#define slab_folio(s)		(_Generic((s),				\
-	const struct slab *:	(const struct folio *)s,		\
-	struct slab *:		(struct folio *)s))
-static inline void *slab_address(const struct slab *slab)
-{
-    return folio_address(slab_folio(slab));
-}
-#endif // LINUX VERSION
+#ifdef PLATFORM_LINUX /* 3.10 ~ 4.13 checked */
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(5, 16, 0))
 #if defined(CONFIG_SLUB)
 #include <linux/slub_def.h>
 #elif defined(CONFIG_SLAB)
 #include <linux/slab_def.h>
 #endif
+#endif // LINUX VERSION
 typedef struct kmem_cache rtw_mcache;
 #endif
 

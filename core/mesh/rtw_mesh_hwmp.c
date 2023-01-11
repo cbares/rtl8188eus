@@ -1527,7 +1527,7 @@ void rtw_mesh_path_tx_root_frame(_adapter *adapter)
 		break;
 	case RTW_IEEE80211_PROACTIVE_PREQ_WITH_PREP:
 		flags |= RTW_IEEE80211_PREQ_PROACTIVE_PREP_FLAG;
-        // fall through
+        fallthrough;
 	case RTW_IEEE80211_PROACTIVE_PREQ_NO_PREP:
 		interval = mshcfg->dot11MeshHWMPactivePathToRootTimeout;
 		target_flags |= RTW_IEEE80211_PREQ_TO_FLAG |
